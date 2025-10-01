@@ -13,7 +13,7 @@ replace (
 require (
 	github.com/agntcy/dir/api v0.3.0-ci-test
 	github.com/agntcy/dir/client v0.3.0-ci-test
-	github.com/agntcy/dir/hub v0.3.0
+	github.com/agntcy/dir/hub v0.3.0-ci-test
 	github.com/agntcy/dir/utils v0.3.0-ci-test
 	github.com/libp2p/go-libp2p v0.41.1
 	github.com/sigstore/sigstore v1.9.5
