@@ -9,16 +9,16 @@ on:
       image_repo:
         required: true
         type: string
-        description: "Image repo to use."
+        description: 'Image repo to use.'
       image_tag:
         required: true
         type: string
-        description: "Image tag to use."
+        description: 'Image tag to use.'
       push:
         required: false
         type: boolean
         default: false
-        description: "Whether to push the image to the registry."
+        description: 'Whether to push the image to the registry.'
 
 jobs:
   prepare:
@@ -88,11 +88,20 @@ jobs:
           mkdir -p /tmp/.buildx-cache
           mkdir /tmp/artifacts
 
+      - name: Build and push (log)
+        if: ${{ inputs.push }}
+        env:
+          IMAGE_REPO: ${{ inputs.image_repo }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          echo "${{ steps.metadata.outputs.bake-file }}"
+          echo "${{ inputs.image_repo }}:${{ inputs.image_tag }}"
+
       - name: Build and push
         if: ${{ inputs.push }}
         uses: docker/bake-action@a4d7f0b5b91c14a296d792d4ec53a9db17f02e67 # v5.5.0
         with:
-          push: true
+          push: false
           provenance: false
           files: |
             ./docker-bake.hcl
