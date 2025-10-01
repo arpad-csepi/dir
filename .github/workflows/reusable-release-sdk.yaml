@@ -9,24 +9,24 @@ on:
       javascript-release:
         required: false
         type: boolean
-        description: "Make a javascript SDK release."
+        description: 'Make a javascript SDK release.'
         default: false
       python-release:
         required: false
         type: boolean
-        description: "Make a python SDK release."
+        description: 'Make a python SDK release.'
         default: false
   workflow_call:
     inputs:
       javascript-release:
         required: false
         type: boolean
-        description: "Make a javascript SDK release."
+        description: 'Make a javascript SDK release.'
         default: false
       python-release:
         required: false
         type: boolean
-        description: "Make a python SDK release."
+        description: 'Make a python SDK release.'
         default: false
 
 permissions:
@@ -51,7 +51,7 @@ jobs:
 
       - name: Install deps
         shell: bash
-        run : |
+        run: |
           task deps
 
       - name: Build the Python package
@@ -60,7 +60,7 @@ jobs:
 
       - name: Publish the Python SDK
         run: |
-          task sdk:release:python
+          echo "task sdk:release:python"
 
   javascript:
     name: JavaScript
@@ -83,11 +83,11 @@ jobs:
         with:
           node-version: '22.x'
           registry-url: https://registry.npmjs.org/
-          scope: "@agntcy"
+          scope: '@agntcy'
 
       - name: Install deps
         shell: bash
-        run : |
+        run: |
           task deps
 
       - name: Build the Javascript package
@@ -97,4 +97,4 @@ jobs:
 
       - name: Publish the Javascript SDK
         run: |
-          task sdk:release:javascript
+          echo "task sdk:release:javascript"
