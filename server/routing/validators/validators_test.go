@@ -180,6 +180,20 @@ func TestDomainValidator_Validate(t *testing.T) {
 			wantError: true,
 			errorMsg:  "invalid CID in value",
 		},
+		{
+			name:      "missing CID",
+			key:       "/domains/ai//Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "missing CID in key",
+		},
+		{
+			name:      "missing PeerID",
+			key:       "/domains/ai/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "invalid key format: expected /<namespace>/<specific_path>/<cid>/<peer_id>",
+		},
 	}
 
 	for _, tt := range tests {
@@ -253,6 +267,121 @@ func TestModuleValidator_Validate(t *testing.T) {
 			wantError: true,
 			errorMsg:  "invalid CID in value",
 		},
+		{
+			name:      "missing CID",
+			key:       "/modules/llm//Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "missing CID in key",
+		},
+		{
+			name:      "missing PeerID",
+			key:       "/modules/llm/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "invalid key format: expected /<namespace>/<specific_path>/<cid>/<peer_id>",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validator.Validate(tt.key, tt.value)
+
+			if tt.wantError {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), tt.errorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+//nolint:dupl // Similar test structure is intentional for different validators
+func TestLocatorValidator_Validate(t *testing.T) {
+	validator := &LocatorValidator{}
+
+	tests := []struct {
+		name      string
+		key       string
+		value     []byte
+		wantError bool
+		errorMsg  string
+	}{
+		{
+			name:      "valid locators key with single locator type",
+			key:       "/locators/docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			value:     []byte{},
+			wantError: false,
+		},
+		{
+			name:      "valid locators key with nested locator path",
+			key:       "/locators/container/docker/alpine/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer2",
+			value:     []byte{},
+			wantError: false,
+		},
+		{
+			name:      "valid locators key with value",
+			key:       "/locators/npm-package/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer3",
+			value:     []byte("bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"),
+			wantError: false,
+		},
+		{
+			name:      "invalid namespace",
+			key:       "/modules/docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "invalid namespace: expected locators, got modules",
+		},
+		{
+			name:      "missing locator type",
+			key:       "/locators/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "invalid key format: expected /<namespace>/<specific_path>/<cid>/<peer_id>",
+		},
+		{
+			name:      "invalid CID format",
+			key:       "/locators/docker-image/invalid-cid/Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "invalid CID format",
+		},
+		{
+			name:      "invalid value CID",
+			key:       "/locators/docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			value:     []byte("invalid-cid-value"),
+			wantError: true,
+			errorMsg:  "invalid CID in value",
+		},
+		{
+			name:      "empty locator path component",
+			key:       "/locators//docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "locator path component cannot be empty at position 1",
+		},
+		{
+			name:      "empty locator path component in middle",
+			key:       "/locators/container//alpine/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "locator path component cannot be empty at position 2",
+		},
+		{
+			name:      "missing CID",
+			key:       "/locators/docker-image//Peer1",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "missing CID in key",
+		},
+		{
+			name:      "missing PeerID",
+			key:       "/locators/docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+			value:     []byte{},
+			wantError: true,
+			errorMsg:  "invalid key format: expected /<namespace>/<specific_path>/<cid>/<peer_id>",
+		},
 	}
 
 	for _, tt := range tests {
@@ -315,6 +444,17 @@ func TestValidators_Select(t *testing.T) {
 			wantIndex: -1,
 			wantError: true,
 			errorMsg:  "no valid values found",
+		},
+		{
+			name:      "locators validator - select first valid value",
+			validator: &LocatorValidator{},
+			key:       "/locators/docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1",
+			values: [][]byte{
+				[]byte("bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"),
+				[]byte("invalid-cid"),
+			},
+			wantIndex: 0,
+			wantError: false,
 		},
 		{
 			name:      "empty values slice",
@@ -654,6 +794,18 @@ func BenchmarkDomainValidator_Validate(b *testing.B) {
 func BenchmarkModuleValidator_Validate(b *testing.B) {
 	validator := &ModuleValidator{}
 	key := "/modules/llm/reasoning/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer3"
+	value := []byte{}
+
+	b.ResetTimer()
+
+	for range b.N {
+		_ = validator.Validate(key, value)
+	}
+}
+
+func BenchmarkLocatorValidator_Validate(b *testing.B) {
+	validator := &LocatorValidator{}
+	key := "/locators/docker-image/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku/Peer1"
 	value := []byte{}
 
 	b.ResetTimer()
