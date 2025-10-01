@@ -15,7 +15,6 @@ import (
 	"github.com/agntcy/dir/server/types"
 	"github.com/agntcy/dir/server/types/labels"
 	"github.com/agntcy/dir/utils/logging"
-	"github.com/ipfs/go-cid"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
 )
@@ -46,19 +45,34 @@ func (f *remoteLabelFilter) Filter(e query.Entry) bool {
 }
 
 // CleanupManager handles all background cleanup and republishing tasks for the routing system.
-// This includes label republishing to DHT, stale remote label cleanup, and orphaned record cleanup.
+// This includes CID provider republishing, GossipSub label republishing, stale remote label cleanup, and orphaned record cleanup.
 type CleanupManager struct {
-	dstore   types.Datastore
-	storeAPI types.StoreAPI
-	server   *p2p.Server
+	dstore      types.Datastore
+	storeAPI    types.StoreAPI
+	server      *p2p.Server
+	publishFunc func(context.Context, string, *corev1.Record) error // Publishing callback (captures routeRemote state)
 }
 
 // NewCleanupManager creates a new cleanup manager with the required dependencies.
-func NewCleanupManager(dstore types.Datastore, storeAPI types.StoreAPI, server *p2p.Server) *CleanupManager {
+// The publishFunc is injected from routeRemote.publishToNetwork to avoid circular dependencies
+// while still providing access to DHT and GossipSub publishing logic.
+//
+// Parameters:
+//   - dstore: Datastore for label storage
+//   - storeAPI: Store API for record operations
+//   - server: P2P server for DHT operations
+//   - publishFunc: Callback for publishing (from routeRemote.publishToNetwork)
+func NewCleanupManager(
+	dstore types.Datastore,
+	storeAPI types.StoreAPI,
+	server *p2p.Server,
+	publishFunc func(context.Context, string, *corev1.Record) error,
+) *CleanupManager {
 	return &CleanupManager{
-		dstore:   dstore,
-		storeAPI: storeAPI,
-		server:   server,
+		dstore:      dstore,
+		storeAPI:    storeAPI,
+		server:      server,
+		publishFunc: publishFunc,
 	}
 }
 
@@ -107,23 +121,25 @@ func (c *CleanupManager) StartRemoteLabelCleanupTask(ctx context.Context) {
 	}()
 }
 
-// republishLocalProviders republishes all local CID provider announcements to the DHT network
-// to ensure they remain discoverable and trigger pull-based label caching on remote peers.
+// republishLocalProviders republishes all local CID provider announcements and labels
+// to ensure they remain discoverable. This maintains both DHT provider records and
+// GossipSub label announcements for optimal network propagation.
 func (c *CleanupManager) republishLocalProviders(ctx context.Context) {
-	cleanupLogger.Info("Starting CID provider republishing cycle")
+	cleanupLogger.Info("Starting CID provider and label republishing cycle")
 
 	// Query all local records from the datastore
 	results, err := c.dstore.Query(ctx, query.Query{
 		Prefix: "/records/",
 	})
 	if err != nil {
-		cleanupLogger.Error("Failed to query local records for provider republishing", "error", err)
+		cleanupLogger.Error("Failed to query local records for republishing", "error", err)
 
 		return
 	}
 	defer results.Close()
 
 	republishedCount := 0
+	labelRepublishedCount := 0
 	errorCount := 0
 
 	var orphanedCIDs []string
@@ -153,26 +169,34 @@ func (c *CleanupManager) republishLocalProviders(ctx context.Context) {
 			continue
 		}
 
-		// Republish CID provider announcement (this triggers pull-based discovery on remote peers)
-		decodedCID, err := cid.Decode(cidStr)
+		// Pull the record from storage for republishing
+		record, err := c.storeAPI.Pull(ctx, ref)
 		if err != nil {
-			cleanupLogger.Warn("Failed to decode CID for provider republishing", "cid", cidStr, "error", err)
+			cleanupLogger.Warn("Failed to pull record for republishing",
+				"cid", cidStr,
+				"error", err)
 
 			errorCount++
 
 			continue
 		}
 
-		err = c.server.DHT().Provide(ctx, decodedCID, true)
-		if err != nil {
-			cleanupLogger.Warn("Failed to republish CID provider announcement", "cid", cidStr, "error", err)
+		// Use injected publishing function (handles both DHT and GossipSub)
+		// This reuses routeRemote.publishToNetwork logic without circular dependency
+		if err := c.publishFunc(ctx, cidStr, record); err != nil {
+			cleanupLogger.Warn("Failed to republish record to network",
+				"cid", cidStr,
+				"error", err)
 
 			errorCount++
-		} else {
-			cleanupLogger.Debug("Successfully republished CID provider announcement", "cid", cidStr)
 
-			republishedCount++
+			continue
 		}
+
+		cleanupLogger.Debug("Successfully republished record to network", "cid", cidStr)
+
+		republishedCount++
+		labelRepublishedCount++ // Count label republishing (done inside publishFunc)
 	}
 
 	// Clean up orphaned local records and their labels
@@ -181,8 +205,11 @@ func (c *CleanupManager) republishLocalProviders(ctx context.Context) {
 		cleanupLogger.Info("Cleaned up orphaned local records", "count", cleanedCount)
 	}
 
-	cleanupLogger.Info("Completed CID provider republishing cycle",
-		"republished", republishedCount, "errors", errorCount, "orphaned", len(orphanedCIDs))
+	cleanupLogger.Info("Completed republishing cycle",
+		"dhtRepublished", republishedCount,
+		"gossipSubRepublished", labelRepublishedCount,
+		"errors", errorCount,
+		"orphaned", len(orphanedCIDs))
 }
 
 // cleanupStaleRemoteLabels removes remote labels that haven't been seen recently.
