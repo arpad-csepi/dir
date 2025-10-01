@@ -7,14 +7,14 @@ replace (
 	github.com/agntcy/dir/client => ../client
 	github.com/agntcy/dir/hub => ../hub
 	github.com/agntcy/dir/utils => ../utils
-	github.com/agntcy/dirhub/backport/api => github.com/agntcy/dir/api v0.2.13
+	github.com/agntcy/dirhub/backport/api => github.com/agntcy/dir/api v0.3.0-ci-test
 )
 
 require (
-	github.com/agntcy/dir/api v0.3.0
-	github.com/agntcy/dir/client v0.3.0
+	github.com/agntcy/dir/api v0.3.0-ci-test
+	github.com/agntcy/dir/client v0.3.0-ci-test
 	github.com/agntcy/dir/hub v0.3.0
-	github.com/agntcy/dir/utils v0.3.0
+	github.com/agntcy/dir/utils v0.3.0-ci-test
 	github.com/libp2p/go-libp2p v0.41.1
 	github.com/sigstore/sigstore v1.9.5
 	github.com/spf13/cobra v1.9.1

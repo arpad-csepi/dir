@@ -8,14 +8,14 @@ replace (
 	github.com/agntcy/dir/client => ../client
 	github.com/agntcy/dir/hub => ../hub
 	github.com/agntcy/dir/utils => ../utils
-	github.com/agntcy/dirhub/backport/api => github.com/agntcy/dir/api v0.2.13
+	github.com/agntcy/dirhub/backport/api => github.com/agntcy/dir/api v0.3.0-ci-test
 )
 
 require (
-	github.com/agntcy/dir/api v0.3.0
+	github.com/agntcy/dir/api v0.3.0-ci-test
 	github.com/agntcy/dir/cli v0.3.0
-	github.com/agntcy/dir/client v0.3.0
-	github.com/agntcy/dir/utils v0.3.0
+	github.com/agntcy/dir/client v0.3.0-ci-test
+	github.com/agntcy/dir/utils v0.3.0-ci-test
 	github.com/mitchellh/mapstructure v1.5.1-0.20231216201459-8508981c8b6c
 	github.com/onsi/ginkgo/v2 v2.23.0
 	github.com/onsi/gomega v1.36.2

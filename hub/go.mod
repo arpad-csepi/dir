@@ -4,12 +4,12 @@ go 1.24.5
 
 replace (
 	github.com/agntcy/dir/utils => ../utils
-	github.com/agntcy/dirhub/backport/api => github.com/agntcy/dir/api v0.2.13
+	github.com/agntcy/dirhub/backport/api => github.com/agntcy/dir/api v0.3.0-ci-test
 )
 
 require (
 	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.7-20250717185734-6c6e0d3c608e.1
-	github.com/agntcy/dir/utils v0.3.0
+	github.com/agntcy/dir/utils v0.3.0-ci-test
 	github.com/agntcy/dirhub/backport/api v0.0.0-00010101000000-000000000000
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
