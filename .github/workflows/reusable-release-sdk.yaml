@@ -9,25 +9,31 @@ on:
       javascript-release:
         required: false
         type: boolean
-        description: "Make a javascript SDK release."
+        description: 'Make a javascript SDK release.'
         default: false
       python-release:
         required: false
         type: boolean
-        description: "Make a python SDK release."
+        description: 'Make a python SDK release.'
         default: false
+
   workflow_call:
     inputs:
       javascript-release:
         required: false
         type: boolean
-        description: "Make a javascript SDK release."
+        description: 'Make a javascript SDK release.'
         default: false
       python-release:
         required: false
         type: boolean
-        description: "Make a python SDK release."
+        description: 'Make a python SDK release.'
         default: false
+    secrets:
+      NPMJS_TOKEN:
+        required: true
+      PYPI_API_TOKEN:
+        required: true
 
 permissions:
   contents: read
@@ -51,7 +57,7 @@ jobs:
 
       - name: Install deps
         shell: bash
-        run : |
+        run: |
           task deps
 
       - name: Build the Python package
@@ -83,11 +89,11 @@ jobs:
         with:
           node-version: '24.x'
           registry-url: https://registry.npmjs.org/
-          scope: "@agntcy"
+          scope: '@agntcy'
 
       - name: Install deps
         shell: bash
-        run : |
+        run: |
           task deps
 
       - name: Build the Javascript package

@@ -1,6 +1,6 @@
 {
-  "name": "agntcy-dir",
-  "version": "0.4.0",
+  "name": "dir-test-pkg",
+  "version": "0.4.1",
   "description": "Directory SDK",
   "homepage": "https://github.com/agntcy/dir",
   "bugs": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agntcy/dir.git"
+    "url": "git+https://github.com/arpad-csepi/dir.git"
   },
   "license": "Apache-2.0",
   "keywords": [
