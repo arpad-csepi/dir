@@ -1,5 +1,5 @@
 [project]
-name = "agntcy-dir"
+name = "dir-test-pkg"
 version = "0.4.0"
 description = "Directory SDK"
 readme = "README.md"
